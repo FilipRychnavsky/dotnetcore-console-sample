@@ -1,7 +1,10 @@
 {
-  "applicationId": "YOUR_APP_ID_HERE",
-  "applicationSecret": "YOUR_APP_SECRET_HERE",
-  "tenantId": "YOUR_TENANT_ID_HERE",
-  "redirectUri": "YOUR_REDIRECT_URI_HERE",
-  "domain": "YOUR_DOMAIN_HERE"
+    "AzureAD": {
+        "Instance": "YOUR_STS_INSTANCE_URL_HERE, ex. https://login.microsoftonline.com/ unless not using public cloud instance",
+        "Domain": "YOUR_DOMAIN_HERE",
+        "TenantId": "YOUR_TENANT_ID_HERE",
+        "ClientId": "YOUR_CLIENT_ID_HERE",
+        "ClientSecret": "YOUR_CLIENT_SECRET_HERE",
+        "RedirectUri": "YOUR_REDIRECT_URI_HERE"
+    }
 }

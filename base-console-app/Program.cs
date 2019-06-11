@@ -60,20 +60,19 @@ namespace ConsoleGraphTest
 
         private static IAuthenticationProvider CreateAuthorizationProvider(IConfigurationRoot config)
         {
-            var clientId = config["applicationId"];
-            var clientSecret = config["applicationSecret"];
-            var redirectUri = config["redirectUri"];
-            var authority = $"https://login.microsoftonline.com/{config["tenantId"]}/v2.0";
+            ConfidentialClientApplicationOptions applicationOptions = new ConfidentialClientApplicationOptions();
+            config.Bind("AzureAD", applicationOptions);
+
+            var authority = $"https://login.microsoftonline.com/{applicationOptions.TenantId}/v2.0";
 
             //this specific scope means that application will default to what is defined in the application registration rather than using dynamic scopes
             List<string> scopes = new List<string>();
             scopes.Add("https://graph.microsoft.com/.default");
 
-            var cca = ConfidentialClientApplicationBuilder.Create(clientId)
-                                                    .WithAuthority(authority)
-                                                    .WithRedirectUri(redirectUri)
-                                                    .WithClientSecret(clientSecret)
-                                                    .Build();
+            var cca = ConfidentialClientApplicationBuilder.CreateWithApplicationOptions(applicationOptions)
+                                                        .WithAuthority(authority)
+                                                        .Build();
+            
             return new MsalAuthenticationProvider(cca, scopes.ToArray());
         }
 
@@ -86,12 +85,7 @@ namespace ConsoleGraphTest
                 .AddJsonFile("appsettings.json", false, true)
                 .Build();
 
-                // Validate required settings
-                if (string.IsNullOrEmpty(config["applicationId"]) ||
-                    string.IsNullOrEmpty(config["applicationSecret"]) ||
-                    string.IsNullOrEmpty(config["redirectUri"]) ||
-                    string.IsNullOrEmpty(config["tenantId"]) ||
-                    string.IsNullOrEmpty(config["domain"]))
+                if(!config.GetSection("AzureAD").Exists())
                 {
                     return null;
                 }
