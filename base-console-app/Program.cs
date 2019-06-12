@@ -13,6 +13,7 @@ namespace ConsoleGraphTest
     {
         private static GraphServiceClient _graphServiceClient;
         private static HttpClient _httpClient;
+        private static ConfidentialClientApplicationOptions _applicationOptions;
 
         static void Main(string[] args)
         {
@@ -60,14 +61,11 @@ namespace ConsoleGraphTest
 
         private static IAuthenticationProvider CreateAuthorizationProvider(IConfigurationRoot config)
         {
-            ConfidentialClientApplicationOptions applicationOptions = new ConfidentialClientApplicationOptions();
-            config.Bind("AzureAD", applicationOptions);
-
             //this specific scope means that application will default to what is defined in the application registration rather than using dynamic scopes
             List<string> scopes = new List<string>();
             scopes.Add("https://graph.microsoft.com/.default");
 
-            var cca = ConfidentialClientApplicationBuilder.CreateWithApplicationOptions(applicationOptions)
+            var cca = ConfidentialClientApplicationBuilder.CreateWithApplicationOptions(_applicationOptions)
                                                         .Build();
             
             return new MsalAuthenticationProvider(cca, scopes.ToArray());
@@ -82,9 +80,14 @@ namespace ConsoleGraphTest
                 .AddJsonFile("appsettings.json", false, true)
                 .Build();
 
-                if(!config.GetSection("AzureAD").Exists())
+                if (!config.GetSection("AzureAD").Exists())
                 {
                     return null;
+                }
+                else
+                {
+                    _applicationOptions = new ConfidentialClientApplicationOptions();
+                    config.Bind("AzureAD", _applicationOptions);
                 }
 
                 return config;
