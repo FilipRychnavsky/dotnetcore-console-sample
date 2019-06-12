@@ -31,7 +31,7 @@ If you don't have a Microsoft account, there are a couple of options to get a fr
 
 1. Open the command line and navigate to this folder.  Run the following command:
 
-    ```
+    ```Batchfile
     dotnet new console
     ```
 
@@ -42,15 +42,17 @@ If you don't have a Microsoft account, there are a couple of options to get a fr
     - Microsoft.Extensions.Configuration
     - Microsoft.Extensions.Configuration.FileExtensions
     - Microsoft.Extensions.Configuration.Json
+    - Microsoft.Extensions.Configuration.Builder
 
     Run the following commands to install these NuGet packages:
 
-    ```
+    ```Batchfile
     dotnet add package Microsoft.Identity.Client --version 3.0.8
     dotnet add package Microsoft.Graph
     dotnet add package Microsoft.Extensions.Configuration
     dotnet add package Microsoft.Extensions.Configuration.FileExtensions
     dotnet add package Microsoft.Extensions.Configuration.Json
+    dotnet add package Microsoft.Extensions.Configuration.Builder
     ```
 
 ## Step 2: Register a web application with the new Azure AD Portal App Registration
@@ -128,7 +130,7 @@ In this step you will extend the application from the previous step to support a
 
 1. On the command line from Step 1, run the following command inside the project folder to open Visual Studio Code with the project folder opened:
 
-    ```
+    ```Batchfile
     code .
     ```
 
@@ -136,20 +138,24 @@ In this step you will extend the application from the previous step to support a
 
     ```json
     {
-        "applicationId": "YOUR_APP_ID_HERE",
-        "applicationSecret": "YOUR_APP_SECRET_HERE",
-        "tenantId": "YOUR_TENANT_ID_HERE",
-        "redirectUri": "YOUR_REDIRECT_URI_HERE",
-        "domain": "YOUR_DOMAIN_HERE"
+        "AzureAD": {
+            "Instance": "YOUR_STS_INSTANCE_URL_HERE, ex. https://login.microsoftonline.com/ unless not using public cloud instance",
+            "Domain": "YOUR_DOMAIN_HERE",
+            "TenantId": "YOUR_TENANT_ID_HERE",
+            "ClientId": "YOUR_CLIENT_ID_HERE",
+            "ClientSecret": "YOUR_CLIENT_SECRET_HERE",
+            "RedirectUri": "YOUR_REDIRECT_URI_HERE"
+        }
     }
     ```
 
 1. Edit `appsettings.json` and fill in the values obtained in previous step on the Azure AD Portal app registration UI:
-    1. Replace `YOUR_APP_ID_HERE` with your application ID.
-    1. Replace `YOUR_APP_SECRET_HERE` with your client secret (VALUE from Secret1 in previous steps).
-    1. Replace `YOUR_TENANT_ID_HERE` with your tenant (domain) ID.
-    1. Replace `YOUR_REDIRECT_URI_HERE` with your application redirect URI.
+    1. Replace `YOUR_STS_INSTANCE_HERE` with your STS_INSTANCE.  https://login.microsoftonline.com/ is the default for public cloud instance.
     1. Replace `YOUR_DOMAIN_HERE` with a vaild domain for your Azure Active Directory instance, e.g. contoso.onmicrosoft.com or contoso.com
+    1. Replace `YOUR_TENANT_ID_HERE` with your tenant (domain) ID.
+    1. Replace `YOUR_CLIENT_ID_HERE` with your client ID.
+    1. Replace `YOUR_CLIENT_SECRET_HERE` with your client secret (VALUE from Secret1 in previous steps).
+    1. Replace `YOUR_REDIRECT_URI_HERE` with your application redirect URI.
 
 > **Important:** If you're using source control such as git, now would be a good time to exclude the `appsettings.json` file from source control to avoid inadvertently leaking your app ID and secret.
 
@@ -287,12 +293,7 @@ In this step you will incorporate the Microsoft Graph into the application. For 
             .AddJsonFile("appsettings.json", false, true)
             .Build();
 
-            // Validate required settings
-            if (string.IsNullOrEmpty(config["applicationId"]) ||
-                string.IsNullOrEmpty(config["applicationSecret"]) ||
-                string.IsNullOrEmpty(config["redirectUri"]) ||
-                string.IsNullOrEmpty(config["tenantId"]) ||
-                string.IsNullOrEmpty(config["domain"]))
+            if(!config.GetSection("AzureAD").Exists())
             {
                 return null;
             }
@@ -311,19 +312,19 @@ In this step you will incorporate the Microsoft Graph into the application. For 
     ```cs
     private static IAuthenticationProvider CreateAuthorizationProvider(IConfigurationRoot config)
     {
-        var clientId = config["applicationId"];
-        var clientSecret = config["applicationSecret"];
-        var redirectUri = config["redirectUri"];
-        var authority = $"https://login.microsoftonline.com/{config["tenantId"]}/v2.0";
+        ConfidentialClientApplicationOptions applicationOptions = new ConfidentialClientApplicationOptions();
+        config.Bind("AzureAD", applicationOptions);
 
+        var authority = $"https://login.microsoftonline.com/{applicationOptions.TenantId}/v2.0";
+
+        //this specific scope means that application will default to what is defined in the application registration rather than using dynamic scopes
         List<string> scopes = new List<string>();
         scopes.Add("https://graph.microsoft.com/.default");
 
-        var cca = ConfidentialClientApplicationBuilder.Create(clientId)
-                                                .WithAuthority(authority)
-                                                .WithRedirectUri(redirectUri)
-                                                .WithClientSecret(clientSecret)
-                                                .Build();
+        var cca = ConfidentialClientApplicationBuilder.CreateWithApplicationOptions(applicationOptions)
+                                                    .WithAuthority(authority)
+                                                    .Build();
+
         return new MsalAuthenticationProvider(cca, scopes.ToArray());
     }
     ```
@@ -390,7 +391,7 @@ In this step you will incorporate the Microsoft Graph into the application. For 
 
 This completes our first set of file edits and additions.  Ensure all files are saved.  In order to test the console application run the following commands from the command line:
 
-```
+```Batchfile
 dotnet build
 dotnet run
 ```
