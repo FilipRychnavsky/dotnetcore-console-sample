@@ -138,9 +138,9 @@ In this step you will extend the application from the previous step to support a
 
     ```json
     {
+        "Domain": "YOUR_DOMAIN_HERE",
         "AzureAD": {
-            "Instance": "YOUR_STS_INSTANCE_URL_HERE, ex. https://login.microsoftonline.com/ unless not using public cloud instance",
-            "Domain": "YOUR_DOMAIN_HERE",
+            "Instance": "YOUR_STS_INSTANCE_URL_HERE, ex. https://login.microsoftonline.com/<tenantId>/v2.0 unless not using public cloud instance",
             "TenantId": "YOUR_TENANT_ID_HERE",
             "ClientId": "YOUR_CLIENT_ID_HERE",
             "ClientSecret": "YOUR_CLIENT_SECRET_HERE",

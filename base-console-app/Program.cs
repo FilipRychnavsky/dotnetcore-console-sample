@@ -63,14 +63,11 @@ namespace ConsoleGraphTest
             ConfidentialClientApplicationOptions applicationOptions = new ConfidentialClientApplicationOptions();
             config.Bind("AzureAD", applicationOptions);
 
-            var authority = $"https://login.microsoftonline.com/{applicationOptions.TenantId}/v2.0";
-
             //this specific scope means that application will default to what is defined in the application registration rather than using dynamic scopes
             List<string> scopes = new List<string>();
             scopes.Add("https://graph.microsoft.com/.default");
 
             var cca = ConfidentialClientApplicationBuilder.CreateWithApplicationOptions(applicationOptions)
-                                                        .WithAuthority(authority)
                                                         .Build();
             
             return new MsalAuthenticationProvider(cca, scopes.ToArray());
