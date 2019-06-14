@@ -47,7 +47,7 @@ If you don't have a Microsoft account, there are a couple of options to get a fr
     Run the following commands to install these NuGet packages:
 
     ```Batchfile
-    dotnet add package Microsoft.Identity.Client --version 3.0.8
+    dotnet add package Microsoft.Identity.Client --version 4.0.0
     dotnet add package Microsoft.Graph
     dotnet add package Microsoft.Extensions.Configuration
     dotnet add package Microsoft.Extensions.Configuration.FileExtensions
@@ -150,8 +150,8 @@ In this step you will extend the application from the previous step to support a
     ```
 
 1. Edit `appsettings.json` and fill in the values obtained in previous step on the Azure AD Portal app registration UI:
-    1. Replace `YOUR_STS_INSTANCE_HERE` with your STS_INSTANCE.  https://login.microsoftonline.com/ is the default for public cloud instance.
     1. Replace `YOUR_DOMAIN_HERE` with a vaild domain for your Azure Active Directory instance, e.g. contoso.onmicrosoft.com or contoso.com
+    1. Replace `YOUR_STS_INSTANCE_HERE` with your STS_INSTANCE.  https://login.microsoftonline.com/ is the default for public cloud instance.
     1. Replace `YOUR_TENANT_ID_HERE` with your tenant (domain) ID.
     1. Replace `YOUR_CLIENT_ID_HERE` with your client ID.
     1. Replace `YOUR_CLIENT_SECRET_HERE` with your client secret (VALUE from Secret1 in previous steps).
@@ -279,6 +279,7 @@ In this step you will incorporate the Microsoft Graph into the application. For 
     ```cs
     private static GraphServiceClient _graphServiceClient;
     private static HttpClient _httpClient;
+    private static ConfidentialClientApplicationOptions _applicationOptions;
     ```
 
 1. Inside the `Program` class add a new method `LoadAppSettings` with the following definition.  This method retrieves the configuration values from a separate file.  This allows updating the configuration (client Id, client secret, etc.) independently of the code itself.  This is a general best practice when possible to separate configuration from code.
@@ -293,12 +294,15 @@ In this step you will incorporate the Microsoft Graph into the application. For 
             .AddJsonFile("appsettings.json", false, true)
             .Build();
 
-            if(!config.GetSection("AzureAD").Exists())
+            if (!config.GetSection("AzureAD").Exists())
             {
                 return null;
             }
-
-            return config;
+            else
+            {
+                _applicationOptions = new ConfidentialClientApplicationOptions();
+                config.Bind("AzureAD", _applicationOptions);
+            }
         }
         catch (System.IO.FileNotFoundException)
         {
@@ -312,17 +316,11 @@ In this step you will incorporate the Microsoft Graph into the application. For 
     ```cs
     private static IAuthenticationProvider CreateAuthorizationProvider(IConfigurationRoot config)
     {
-        ConfidentialClientApplicationOptions applicationOptions = new ConfidentialClientApplicationOptions();
-        config.Bind("AzureAD", applicationOptions);
-
-        var authority = $"https://login.microsoftonline.com/{applicationOptions.TenantId}/v2.0";
-
         //this specific scope means that application will default to what is defined in the application registration rather than using dynamic scopes
         List<string> scopes = new List<string>();
         scopes.Add("https://graph.microsoft.com/.default");
 
-        var cca = ConfidentialClientApplicationBuilder.CreateWithApplicationOptions(applicationOptions)
-                                                    .WithAuthority(authority)
+        var cca = ConfidentialClientApplicationBuilder.CreateWithApplicationOptions(_applicationOptions)
                                                     .Build();
 
         return new MsalAuthenticationProvider(cca, scopes.ToArray());
