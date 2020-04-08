@@ -13,4 +13,8 @@
     <PackageReference Include="Microsoft.Identity.Client" Version="4.11.0" />
   </ItemGroup>
 
+  <Target Name="PostBuild" AfterTargets="PostBuildEvent">
+    <Exec Command="copy $(ProjectDir)\appsettings.json $(ProjectDir)$(OutDir)" />
+  </Target>
+
 </Project>
